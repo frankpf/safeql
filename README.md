@@ -2,6 +2,10 @@
 
 SafeQL is an experiment in making a fully type-safe SQL query builder.
 
+# TRIGGER WARNING
+
+The current code is ugly.
+
 ## Example usage
 
 Let's say you have two tables as defined in [products.sql](./tests/sql/products.sql) and [users.sql](./tests/sql/users.sql).
