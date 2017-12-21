@@ -2,6 +2,7 @@
 
 import * as pg from 'pg'
 import { users, products, prices_history } from './osm'
+import { Omit } from 'type-zoo'
 
 export default function SafeQL<Schema>(uri: string) {
 	return function buildTable<Name extends keyof Schema>(name: Name) {
@@ -12,16 +13,18 @@ export default function SafeQL<Schema>(uri: string) {
 class Table<Schema, Name extends string, Fields extends keyof Schema, DisabledKeys extends keyof Table<Schema, Name, Fields, DisabledKeys> = 'name'> {
 	private client: pg.Client
 
-	constructor(public readonly name: Name,
-		        private uri: string,
-		        private selector?: '*' | (keyof Schema)[],
-		        private filter?: Partial<{ [Field in keyof Schema]: Schema[Field] }>
-		        ) {
+	constructor(
+	           public readonly name: Name,
+	           private uri: string,
+	           private selector?: '*' | (keyof Schema)[],
+	           private filter?: Partial<{ [Field in keyof Schema]: Schema[Field] }>
+	           ){
+		//this.client = pgPromise()(uri)
 		this.client = new pg.Client({ connectionString: uri })
 	}
 
-	select                                  (items: '*'              ): DisableSelect<Schema, Name, keyof Schema, DisabledKeys>
-	select<FieldSubset extends keyof Schema>(items: FieldSubset[]    ): DisableSelect<Schema, Name, FieldSubset, DisabledKeys>
+	select                                  (items: '*'                ): DisableSelect<Schema, Name, keyof Schema, DisabledKeys>
+	select<FieldSubset extends keyof Schema>(items: FieldSubset[]      ): DisableSelect<Schema, Name, FieldSubset, DisabledKeys>
 	select<FieldSubset extends keyof Schema>(items: '*' | FieldSubset[]): DisableSelect<Schema, Name, keyof Schema, DisabledKeys> | DisableSelect<Schema, Name, FieldSubset, DisabledKeys> {
 		if (items == '*') {
 			const selector = '*'
@@ -33,7 +36,6 @@ class Table<Schema, Name extends string, Fields extends keyof Schema, DisabledKe
 	}
 
 	where(obj: Partial<{ [Field in keyof Schema]: Schema[Field] }>): DisableWhere<Schema, Name, Fields, DisabledKeys> {
-		/* unimplemented */
 		return new Table<Schema, Name, Fields, DisabledKeys>(this.name, this.uri, this.selector, obj) as any
 	}
 
@@ -63,9 +65,10 @@ class Table<Schema, Name extends string, Fields extends keyof Schema, DisabledKe
 		}
 
 		return this.client
-			.query(`SELECT ${this.selector} FROM ${this.name}`)
-			.then(result => result.rows)
+			.query(`SELECT ${selectStr} FROM ${this.name}`)
+			.then(result => JSON.parse( JSON.stringify(result.rows)) )
 	}
 }
 
-type TableWithoutSelect<S,N extends string,T extends keyof S>=Pick<Table<S,N,T>, 'exec'|'where'>
+type DisableSelect<S,N extends string,T extends keyof S, R extends keyof Table<S,N,T,R>>=Omit<Table<S,N,T,R|'select'>, R|'select'>
+type DisableWhere<S,N extends string,T extends keyof S,R extends keyof Table<S,N,T,R>>=Omit<Table<S,N,T, R|'where'>, R|'where'>

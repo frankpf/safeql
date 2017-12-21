@@ -1706,6 +1706,10 @@ tweetnacl@^0.14.3, tweetnacl@~0.14.0:
   version "0.14.5"
   resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-0.14.5.tgz#5ae68177f192d4456269d108afa93ff8743f4f64"
 
+type-zoo@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/type-zoo/-/type-zoo-1.0.1.tgz#220254819d6cc5bb8e8583ca5b537b9bcf3d0699"
+
 typescript@^2.6.2:
   version "2.6.2"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.6.2.tgz#3c5b6fd7f6de0914269027f03c0946758f7673a4"

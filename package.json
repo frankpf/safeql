@@ -29,6 +29,7 @@
     "typescript": "^2.6.2"
   },
   "dependencies": {
-    "pg": "^7.4.0"
+    "pg": "^7.4.0",
+    "type-zoo": "^1.0.1"
   }
 }
