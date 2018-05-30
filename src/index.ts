@@ -1,9 +1,15 @@
 /* tslint:disable */
 
+type AssertM<A, Ret> = A extends true ? (true extends A ? Ret : never): never
 import * as pg from 'pg'
 import { users, products, prices_history } from './osm'
 import { Omit } from 'type-zoo'
 import * as GetmoreSchema from './GetmoreSchema'
+import { ObjectHasKey } from 'typelevel-ts'
+
+type T1 = ObjectHasKey<{x: 1}, 'x'>
+
+export interface ErrorMessage<TMsg> { msg: TMsg; }
 
 type DatabaseLike<D> = {
 	[K in keyof D]: SchemaLike<D[K]>
@@ -16,6 +22,7 @@ export default function SafeQL<Database extends DatabaseLike<Database>>(uri: str
 
 class Table<Schema extends SchemaLike<Schema>, Name extends string, Columns extends keyof Schema, IsPrimary extends boolean> {
 	private client: pg.Client
+	private unique = false
 
 	constructor(
 		public readonly name: Name,
@@ -46,11 +53,28 @@ class Table<Schema extends SchemaLike<Schema>, Name extends string, Columns exte
 		return new Table<Schema, Name, SelectedColumns, IsPrimary>(this.name, this.uri, selector) as any
 	}
 
+
+
 	where<
 		WhereColumn extends keyof Schema,
+		Z = Schema[WhereColumn]['primaryKey'],
 		Primaries = { [K in WhereColumn]: Schema[K]['primaryKey'] }
 	>(obj: Partial<{ [K in WhereColumn]: Schema[K]['type'] }>): Table<Schema, Name, Columns, ValuesOf<Primaries> extends false ? false : true> {
 		return new Table<Schema, Name, Columns, ValuesOf<Primaries> extends false ? false : true>(this.name, this.uri, this.selector, obj) as any
+	}
+
+	whereOne<
+		WhereColumn extends keyof Schema,
+		Primaries = { [K in WhereColumn]: Schema[K]['primaryKey'] },
+		TypeChecks extends true = ValuesOf<Primaries> extends false ? never : true,
+		TC = Assert<TypeChecks, true>
+	>(obj: Partial<{ [K in WhereColumn]: Schema[K]['type']}>, assert: AssertM<ValuesOf<Primaries> extends false ? false : true, Obj>): Table<Schema, Name, Columns, true> {
+		this.unique = true
+		return 1 as any
+	}
+
+	whereMany() {
+		this.unique = false
 	}
 
 	execM<Prim extends boolean = IsPrimary extends false ? false : true>(x: Prim ) {}
@@ -127,10 +151,11 @@ type ValuesOf<T> = T[keyof T]
 
 type A1 = Assert<typeof items, {id: string}[]>
 type A2 = Assert<typeof filteredP, {id: string}>
-type A3 = Assert<typeof filteredNP, {id:string}[]>
+//type A3 = Assert2<typeof filteredNP, {id:string}, 'ok'>
 
 
-type Assert<T extends Assertion, Assertion> = true
+type Assert<T extends Assertion, Assertion> = T
+type Assert2<T extends Assertion, Assertion, Ret> = Ret
 
 type MyDatabase = {
 	'users': users
@@ -145,8 +170,6 @@ type GetmoreDatabase = {
 async function main() {
 const client = SafeQL<GetmoreDatabase>('')
 
-SafeQL<StaticTypes>('', RuntimeTypes)
-
 // TODO: Refactor where into whereOne and whereMany
 // Sadly, using just `where` wouldn't work. Even though
 // we know at compile-time if a primary key was passed in,
@@ -156,9 +179,12 @@ SafeQL<StaticTypes>('', RuntimeTypes)
 // - whereMany -> Errors if given at least one UNIQUE key
 let table =    client('Users')
 let selected = table.select('name', 'commonId')
-let filtered = selected.where({ id: 'string', commonId: 'string', phoneInfo:1 })
+let filtered = selected.whereOne({ commonId: '1' }, { commonId: '1' })
 
-const items = await filtered.execM(true)
+/*
+selected.whereOne('kjas')
+
+const items = await filtered.exec()
 
 items.id
 items.deleted
@@ -171,5 +197,27 @@ for (const item of items) {
 	let c = item.commonId
 	let d = item.name
 }
+*/
+
+const test1 = {
+	prop1: { callable: true, value: 'y' },
+	prop2: { callable: false, value: 'z' },
+}
+
+const test2 = {
+	prop1: { callable: false, value: 'x' },
+	prop2: { callable: false, value: 'w' },
+}
+
+type TestLike<T> = {
+	[K in keyof T]: { callable: boolean, value: any }
+}
+
+
+
+function accept<T>(obj: Predicate<T>) {
 
 }
+
+accept(1)
+accept('string')
