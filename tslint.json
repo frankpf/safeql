@@ -1,7 +1,6 @@
 {
 	"extends": ["tslint-eslint-rules"],
 	"rules": {
-		"no-unexpected-multiline": true,
 		"class-name": true,
 		"one-line": [
 			true,
