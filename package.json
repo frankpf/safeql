@@ -30,6 +30,10 @@
   },
   "dependencies": {
     "pg": "^7.4.0",
-    "type-zoo": "^1.0.1"
+    "type-zoo": "^1.0.1",
+    "typelevel-ts": "^0.2.3"
+  },
+  "engines": {
+    "node": "^10.1.0"
   }
 }
